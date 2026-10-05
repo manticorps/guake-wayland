@@ -214,7 +214,18 @@ class FullscreenManager:
                 self.unfullscreen()
 
     def fullscreen(self):
-        self.window.fullscreen()
+        # A bare fullscreen() lets the window manager pick the monitor (usually the one under
+        # the pointer), ignoring the monitor chosen in the preferences
+        monitor = RectCalculator.get_final_window_monitor(self.settings, self.window)
+        display = self.window.get_display()
+        n = next(
+            (i for i in range(display.get_n_monitors()) if display.get_monitor(i) == monitor),
+            None,
+        )
+        if n is None:
+            self.window.fullscreen()
+        else:
+            self.window.fullscreen_on_monitor(self.window.get_screen(), n)
         setattr(self.window, self.FULLSCREEN_ATTR, True)
         self.toggle_fullscreen_hide_tabbar()
 
@@ -347,7 +358,8 @@ class RectCalculator:
                 # by default we use the primary monitor
                 monitor = display.get_primary_monitor()
 
-        return monitor
+        # Wayland has no primary monitor (None): fall back to the first one
+        return monitor or display.get_monitor(0)
 
 
 class ImageLayoutMode(enum.IntEnum):

@@ -1,0 +1,4 @@
+fixes:
+  - |
+      - "Always on primary" (display-n = -1) no longer crashes under Wayland, where GDK reports no primary monitor: the first monitor is used instead
+      - Fullscreen now opens on the monitor chosen in the preferences instead of the one under the pointer
