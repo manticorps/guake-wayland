@@ -1,0 +1,66 @@
+# Guake with the Wayland monitor fixes (this fork), replaces the official guake package: cd arch && makepkg -si
+# Based on the Arch Linux PKGBUILD (Balló György), same Arch patches.
+
+pkgname=guake
+pkgver=3.10.1.r14.g99295af0
+pkgrel=1
+pkgdesc='Python based dropdown terminal (Wayland monitor fixes)'
+arch=(any)
+url='https://github.com/manticorps/guake-wayland'
+license=(GPL-2.0-or-later)
+depends=(
+  dconf
+  glib2
+  gtk3
+  hicolor-icon-theme
+  libkeybinder3
+  libnotify
+  libutempter
+  libwnck3
+  pango
+  python
+  python-cairo
+  python-dbus
+  python-gobject
+  python-yaml
+  vte3
+)
+makedepends=(
+  git
+  python-pip
+)
+optdepends=('libappindicator: StatusNotifierItem support')
+source=(
+  "guake::git+https://github.com/manticorps/guake-wayland.git#branch=master"
+  guake-preferences-dialog.patch
+  guake-icon-install.patch
+)
+b2sums=(
+  SKIP
+  366a4ba89b34df3b7316be8fc28070f8c1c269a8a097efa24deed1fb6dc521ee1a438cdcd22c68ed1f054ec044dbd6389cd875e0c9d82362a29c6844519e475b
+  99f17ca47fd332e1be716e70278c9c6da69b9912d6301e930a1a33eaf32c097e320a34bdc89fa47e919506ce0703c2b46464dfacf0ad5476608d134802c85ad5
+)
+
+pkgver() {
+  cd $pkgname
+  git describe --long --tags | sed 's/-/.r/;s/-/./'
+}
+
+prepare() {
+  cd $pkgname
+  git apply -3 ../guake-preferences-dialog.patch
+  git apply -3 ../guake-icon-install.patch
+  sed -i '/-m pip install -r requirements.txt/d' Makefile
+}
+
+build() {
+  cd $pkgname
+  make
+}
+
+package() {
+  cd $pkgname
+  # without it pip tries to uninstall the guake already installed on the system
+  PIP_IGNORE_INSTALLED=1 make DESTDIR="$pkgdir" PREFIX=/usr COMPILE_SCHEMA=0 install
+  rm -r "$pkgdir"/usr/lib/python*/site-packages/guake/data
+}
